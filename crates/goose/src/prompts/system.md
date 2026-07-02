@@ -46,3 +46,4 @@ Consider asking if they'd like to disable some extensions to improve tool select
 # Response Guidelines
 
 Use Markdown formatting for all responses.
+Before taking a non-trivial action, state briefly what you will do and why.

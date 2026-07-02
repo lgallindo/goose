@@ -16,8 +16,10 @@ use rmcp::model::{
     ServerCapabilities, Tool, ToolAnnotations,
 };
 use schemars::{schema_for, JsonSchema};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shell::{shell_display_name, ShellOutput, ShellParams, ShellTool};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tree::{TreeParams, TreeTool};
@@ -30,6 +32,30 @@ pub struct DeveloperClient {
     edit_tools: Arc<EditTools>,
     tree_tool: Arc<TreeTool>,
     image_tool: Arc<ImageTool>,
+    // Per-session volatile key-value storage, intentionally RAM-only.
+    session_kv_store: Arc<std::sync::RwLock<HashMap<String, HashMap<String, String>>>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct KvSetParams {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct KvGetParams {
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct KvDeleteParams {
+    pub key: String,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, JsonSchema)]
+pub struct KvListParams {
+    #[serde(default)]
+    pub prefix: Option<String>,
 }
 
 fn developer_instructions() -> &'static str {
@@ -78,6 +104,7 @@ impl DeveloperClient {
             edit_tools: Arc::new(EditTools::new()),
             tree_tool: Arc::new(TreeTool::new()),
             image_tool: Arc::new(ImageTool::new()),
+            session_kv_store: Arc::new(std::sync::RwLock::new(HashMap::new())),
         })
     }
 
@@ -96,6 +123,71 @@ impl DeveloperClient {
             .map(Value::Object)
             .ok_or_else(|| "Missing arguments".to_string())?;
         serde_json::from_value(value).map_err(|e| format!("Failed to parse arguments: {e}"))
+    }
+
+    fn text_result(text: impl Into<String>) -> CallToolResult {
+        CallToolResult::success(vec![Content::text(text.into()).with_priority(0.0)])
+    }
+
+    fn kv_set(&self, session_id: &str, params: KvSetParams) -> CallToolResult {
+        let mut store = self.session_kv_store.write().unwrap();
+        let session_store = store.entry(session_id.to_string()).or_default();
+        session_store.insert(params.key.clone(), params.value.clone());
+        Self::text_result(format!("stored '{}'", params.key))
+    }
+
+    fn kv_get(&self, session_id: &str, params: KvGetParams) -> CallToolResult {
+        let store = self.session_kv_store.read().unwrap();
+        if let Some(value) = store
+            .get(session_id)
+            .and_then(|session_store| session_store.get(&params.key))
+        {
+            return Self::text_result(value.clone());
+        }
+
+        Self::text_result(format!("not found: '{}'", params.key))
+    }
+
+    fn kv_delete(&self, session_id: &str, params: KvDeleteParams) -> CallToolResult {
+        let mut store = self.session_kv_store.write().unwrap();
+        let removed = store
+            .get_mut(session_id)
+            .and_then(|session_store| session_store.remove(&params.key));
+        if removed.is_some() {
+            Self::text_result(format!("deleted '{}'", params.key))
+        } else {
+            Self::text_result(format!("not found: '{}'", params.key))
+        }
+    }
+
+    fn kv_list(&self, session_id: &str, params: KvListParams) -> CallToolResult {
+        let store = self.session_kv_store.read().unwrap();
+        let Some(session_store) = store.get(session_id) else {
+            return Self::text_result("empty");
+        };
+
+        let mut rows: Vec<(String, String)> = session_store
+            .iter()
+            .filter(|(key, _)| {
+                params
+                    .prefix
+                    .as_ref()
+                    .is_none_or(|prefix| key.starts_with(prefix))
+            })
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        rows.sort_by(|a, b| a.0.cmp(&b.0));
+
+        if rows.is_empty() {
+            return Self::text_result("empty");
+        }
+
+        let output = rows
+            .into_iter()
+            .map(|(k, v)| format!("{k}={v}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        Self::text_result(output)
     }
 
     pub(crate) fn get_tools() -> Vec<Tool> {
@@ -168,6 +260,54 @@ impl DeveloperClient {
                 Some(true),
                 Some(false),
             )),
+            Tool::new(
+                "kv_set".to_string(),
+                "Set a session-scoped volatile key-value entry (RAM only, cleared when goose process exits).".to_string(),
+                Self::schema::<KvSetParams>(),
+            )
+            .annotate(ToolAnnotations::from_raw(
+                Some("KV Set".to_string()),
+                Some(false),
+                Some(false),
+                Some(true),
+                Some(false),
+            )),
+            Tool::new(
+                "kv_get".to_string(),
+                "Get a session-scoped volatile key value by key (RAM only).".to_string(),
+                Self::schema::<KvGetParams>(),
+            )
+            .annotate(ToolAnnotations::from_raw(
+                Some("KV Get".to_string()),
+                Some(true),
+                Some(false),
+                Some(true),
+                Some(false),
+            )),
+            Tool::new(
+                "kv_delete".to_string(),
+                "Delete a key from the session-scoped volatile key-value store (RAM only).".to_string(),
+                Self::schema::<KvDeleteParams>(),
+            )
+            .annotate(ToolAnnotations::from_raw(
+                Some("KV Delete".to_string()),
+                Some(false),
+                Some(false),
+                Some(true),
+                Some(false),
+            )),
+            Tool::new(
+                "kv_list".to_string(),
+                "List session-scoped volatile key-value entries as key=value lines; optional prefix filter.".to_string(),
+                Self::schema::<KvListParams>(),
+            )
+            .annotate(ToolAnnotations::from_raw(
+                Some("KV List".to_string()),
+                Some(true),
+                Some(false),
+                Some(true),
+                Some(false),
+            )),
         ]
     }
 }
@@ -231,6 +371,42 @@ impl McpClientTrait for DeveloperClient {
                 ))
                 .with_priority(0.0)])),
             },
+            "kv_set" => match Self::parse_args::<KvSetParams>(arguments) {
+                Ok(params) => Ok(self.kv_set(&ctx.session_id, params)),
+                Err(error) => Ok(CallToolResult::error(vec![Content::text(format!(
+                    "Error: {error}"
+                ))
+                .with_priority(0.0)])),
+            },
+            "kv_get" => match Self::parse_args::<KvGetParams>(arguments) {
+                Ok(params) => Ok(self.kv_get(&ctx.session_id, params)),
+                Err(error) => Ok(CallToolResult::error(vec![Content::text(format!(
+                    "Error: {error}"
+                ))
+                .with_priority(0.0)])),
+            },
+            "kv_delete" => match Self::parse_args::<KvDeleteParams>(arguments) {
+                Ok(params) => Ok(self.kv_delete(&ctx.session_id, params)),
+                Err(error) => Ok(CallToolResult::error(vec![Content::text(format!(
+                    "Error: {error}"
+                ))
+                .with_priority(0.0)])),
+            },
+            "kv_list" => {
+                let params = match arguments {
+                    Some(_) => match Self::parse_args::<KvListParams>(arguments) {
+                        Ok(params) => params,
+                        Err(error) => {
+                            return Ok(CallToolResult::error(vec![Content::text(format!(
+                                "Error: {error}"
+                            ))
+                            .with_priority(0.0)]));
+                        }
+                    },
+                    None => KvListParams::default(),
+                };
+                Ok(self.kv_list(&ctx.session_id, params))
+            }
             _ => Ok(CallToolResult::error(vec![Content::text(format!(
                 "Error: Unknown tool: {name}"
             ))
@@ -258,7 +434,20 @@ mod tests {
             .map(|t| t.name.to_string())
             .collect();
 
-        assert_eq!(names, vec!["write", "edit", "shell", "tree", "read_image"]);
+        assert_eq!(
+            names,
+            vec![
+                "write",
+                "edit",
+                "shell",
+                "tree",
+                "read_image",
+                "kv_set",
+                "kv_get",
+                "kv_delete",
+                "kv_list"
+            ]
+        );
     }
 
     fn test_context(data_dir: std::path::PathBuf) -> PlatformExtensionContext {
@@ -347,5 +536,70 @@ mod tests {
         let observed = std::fs::canonicalize(first_text(&result)).unwrap();
         let expected = std::fs::canonicalize(&cwd).unwrap();
         assert_eq!(observed, expected);
+    }
+
+    #[tokio::test]
+    async fn developer_client_kv_persists_per_session() {
+        let temp = tempfile::tempdir().unwrap();
+        let client = DeveloperClient::new(test_context(temp.path().join("sessions"))).unwrap();
+        let ctx = ToolCallContext::new("session-a".to_owned(), None, None);
+
+        let set_res = client
+            .call_tool(
+                &ctx,
+                "kv_set",
+                Some(object!({"key": "token", "value": "abc123"})),
+                CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(set_res.is_error, Some(false));
+
+        let get_res = client
+            .call_tool(
+                &ctx,
+                "kv_get",
+                Some(object!({"key": "token"})),
+                CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(first_text(&get_res), "abc123");
+
+        let list_res = client
+            .call_tool(&ctx, "kv_list", None, CancellationToken::new())
+            .await
+            .unwrap();
+        assert!(first_text(&list_res).contains("token=abc123"));
+    }
+
+    #[tokio::test]
+    async fn developer_client_kv_isolated_by_session_id() {
+        let temp = tempfile::tempdir().unwrap();
+        let client = DeveloperClient::new(test_context(temp.path().join("sessions"))).unwrap();
+
+        let ctx_a = ToolCallContext::new("session-a".to_owned(), None, None);
+        let ctx_b = ToolCallContext::new("session-b".to_owned(), None, None);
+
+        let _ = client
+            .call_tool(
+                &ctx_a,
+                "kv_set",
+                Some(object!({"key": "mode", "value": "strict"})),
+                CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+
+        let get_b = client
+            .call_tool(
+                &ctx_b,
+                "kv_get",
+                Some(object!({"key": "mode"})),
+                CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(first_text(&get_b), "not found: 'mode'");
     }
 }

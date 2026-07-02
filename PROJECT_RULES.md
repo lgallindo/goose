@@ -70,6 +70,7 @@ ui/desktop/            # Electron app
 
 ## Rules
 
+- Development: Unless explicitly stated otherwise by the user, use TDD (write or update tests first, then implement, then re-run tests).
 - Test: Prefer tests/ folder, e.g. crates/goose/tests/
 - Test: When adding features, update goose-self-test.yaml, rebuild, then run `goose run --recipe goose-self-test.yaml` to validate
 - Error: Use anyhow::Result

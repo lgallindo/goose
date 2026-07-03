@@ -22,13 +22,13 @@ We've secured MCP integration for GitHub, GitLab, and Bitbucket. All credentials
 
 ```bash
 # ❌ WRONG - Hardcoded in script
-export GITLAB_TOKEN="glft-U1a8JH61sxbjD5gfRp2_"
+export GITLAB_TOKEN="glft-XXXXXXXXXXXXXXXXXX"
 
 # ❌ WRONG - In markdown docs
-Tutorial: `curl -H "Authorization: token ghp_abc123" ...`
+Tutorial: `curl -H "Authorization: token ghp_XXXXXXXXXXXXXXXXXXXX" ...`
 
 # ❌ WRONG - In code files
-const GITHUB_PAT = "ghp_secrettoken123";
+const GITHUB_PAT = "ghp_XXXXXXXXXXXXXXXXXXXX";
 ```
 
 ### ✅ DO THIS
@@ -144,7 +144,7 @@ export BITBUCKET_SCOPED_TOKEN="ATATT3xXXXXXXXXXXXXXX" # Bitbucket scoped token
 # In current shell session
 source ~/.bashrc
 
-# Verify
+# Verify (will display actual tokens from ~/.bashrc)
 echo $GITHUB_TOKEN
 echo $GITLAB_PAT
 echo $BITBUCKET_SCOPED_TOKEN

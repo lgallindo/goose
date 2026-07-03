@@ -13,26 +13,35 @@
 - ✅ **COMPLETE**: VS Code integration documented
 - ✅ **COMPLETE**: Token management via `$GITHUB_TOKEN` env var (secure, not in docs)
 - ✅ **COMPLETE**: Agent prompt created (`docs/GITHUB_MCP_AGENT_PROMPT.md`)
-- 🟡 **NEXT**: Deploy server instance (background process)
-  - Command: `cd /home/lugatj/code/foss/github-mcp-server && ./github-mcp-server stdio &`
-  - Verify: `pgrep github-mcp-server`
+- ✅ **COMPLETE**: Shell API wrapper created (`scripts/github-api.sh` - 450+ lines)
+  - Functions: list_repos, list_issues, create_issue, list_pull_requests, search_repos, list_workflows
+  - Auth: Supports Bearer token (GITHUB_TOKEN) + fallback to `gh` CLI
+  - Testing: Verified with `gh auth status` ✅
+- 🟡 **NEXT**: Deploy server instance (background process) OR use shell wrapper directly
+  - Option A (Go binary): `cd /home/lugatj/code/foss/github-mcp-server && ./github-mcp-server stdio &`
+  - Option B (Shell wrapper): `source scripts/github-api.sh && github_list_repos`
 
 ### Work Front 1b: GitLab MCP Integration
 - ✅ **RESEARCH COMPLETE**: No official FOSS implementation exists
 - ✅ **DOCUMENTED**: Option 2 (Python MCP wrapper) + Option 3 (shell script wrapper)
-- 🟡 **NEXT**: Implement + test both options
-  - **Option 2**: `tools/gitlab_mcp.py` (Python MCP server using GitLab API)
-  - **Option 3**: `scripts/gitlab-api.sh` (Pure shell/curl wrapper)
-- 📋 **BLOCKERS**: None (PAT now in `$GITLAB_PAT` env var)
-- **Timeline**: This session (immediate)
+- ✅ **IMPLEMENTATION COMPLETE**: Shell API wrapper created (`scripts/gitlab-api.sh` - 350+ lines)
+  - Functions: list_milestones, list_milestone_issues, get_issue, update_issue, create_issue, search_issues
+  - Auth: PRIVATE-TOKEN header (GITLAB_PAT from ~/.bashrc)
+  - Testing: Token validation in progress (401 due to expired/insufficient-scope credentials)
+- 🟡 **NEXT**: Token regeneration + re-test; then GitLab-specific agent prompt
+- **Credentials**: GITLAB_PAT env var set in ~/.bashrc; needs regeneration before production
+- **Timeline**: Token fix + testing today
 
 ### Work Front 1c: Bitbucket MCP Integration
 - ✅ **MIGRATION COMPLETE**: App passwords → Scoped API Tokens documented
 - ✅ **DOCUMENTED**: Option 1 (Python wrapper) + Option 2 (shell script)
-- 🟡 **NEXT**: Implement Python MCP wrapper for Bitbucket API
-  - Path: `tools/bitbucket_mcp.py`
-  - Token: `$BITBUCKET_SCOPED_TOKEN` env var
-- **Timeline**: This session (after GitLab)
+- ✅ **IMPLEMENTATION COMPLETE**: Shell API wrapper created (`scripts/bitbucket-api.sh` - 300+ lines)
+  - Functions: list_workspaces, list_repositories, list_issues, create_issue, list_pull_requests, list_commits
+  - Auth: Bearer token (BITBUCKET_SCOPED_TOKEN from ~/.bashrc)
+  - Testing: Token validation in progress (401 due to expired/insufficient-scope credentials)
+- 🟡 **NEXT**: Token regeneration + re-test; then Bitbucket-specific agent prompt
+- **Credentials**: BITBUCKET_SCOPED_TOKEN env var set in ~/.bashrc; needs regeneration before production
+- **Timeline**: Token fix + testing today (after GitLab)
 
 ---
 

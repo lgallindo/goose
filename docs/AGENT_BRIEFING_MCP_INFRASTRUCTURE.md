@@ -131,10 +131,12 @@ python tools/bitbucket_mcp.py
 ### Environment Variables (in ~/.bashrc)
 
 ```bash
-export GITHUB_TOKEN="ghp_..."                  # Personal access token
-export GITLAB_PAT="glft-U1a8JH61..."          # GitLab personal token
-export BITBUCKET_SCOPED_TOKEN="ATATT3x..."    # Bitbucket scoped token
+export GITHUB_TOKEN="ghp_XXXXXXXXXXXXXXXXXXXX"         # Personal access token
+export GITLAB_PAT="glft-XXXXXXXXXXXXXXXXXX"            # GitLab personal token  
+export BITBUCKET_SCOPED_TOKEN="ATATT3xXXXXXXXXXXXXXX" # Bitbucket scoped token
 ```
+
+**Note**: Replace `XXXX...` with actual tokens from `~/.bashrc`. Never commit real tokens.
 
 ### How to Load
 

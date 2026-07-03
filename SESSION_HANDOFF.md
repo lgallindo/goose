@@ -151,3 +151,40 @@
   2. Implement Alternative 1 (API wrapper for Aider) by next session
   3. Kickstart GitLab MCP wrapper implementation (if network access confirmed)
   4. Begin timestamp RFC3339 tool TDD implementation
+
+### 2026-07-03T09:10:00Z (SECRETS KV STORE PLANNING)
+- **Commit**: fa21fa2af
+- **Status**: Planning phase complete (no implementation)
+- **Work Completed**:
+  - ✅ Comprehensive secrets KV store specification (780 lines)
+  - ✅ Encryption architecture: AES-256-GCM + Argon2id
+  - ✅ Template substitution design: %$SECRET_NAME$% at tool invocation only
+  - ✅ Audit logging + access control + sanitization
+  - ✅ Threat model with 6-layer defense strategy
+  - ✅ Implementation timeline (MVP: 3-4 weeks)
+  - ✅ Open questions for design review (5 items)
+  - ✅ Phase 2 & 3 extensions mapped (versioning, RBAC, HSM, compliance)
+
+- **Key Decisions**:
+  - Secrets remain templated during agent reasoning (not exposed in logs)
+  - Substitution ONLY at tool invocation
+  - Tool output sanitized (redaction) before user display
+  - Master key via password (Argon2id) or OS keyring
+  - Per-secret metadata: created, updated, last_accessed, access_count
+
+- **Crate Dependencies Identified**:
+  - ring (AEAD, key derivation)
+  - aes-gcm or argon2 for encryption/derivation
+  - zeroize (sensitive buffer cleanup)
+  - keyring (OS-level integration)
+  - rusqlite (KV storage)
+
+- **Design Open Questions**:
+  1. Master key recovery mechanism (password only vs backup codes)?
+  2. Session isolation (per-session vs per-user global)?
+  3. Audit log retention (30/90/indefinite days)?
+  4. Secret categorization (API keys vs certificates)?
+  5. Backwards compatibility (env vars deprecation timeline)?
+
+- **Next Phase**: Design review → Security review → UX review → RFC → Implementation (TDD)
+

@@ -25,7 +25,8 @@ Bitbucket does not have an official MCP server. However, several options exist:
      - `repository:read` - Read repository data
      - `pullrequest:read` - Read pull requests
      - `issue:read` - Read issues (if needed)
-   - Copy token (save securely)
+   - **Important**: Token is stored in `~/.bashrc` as `$BITBUCKET_SCOPED_TOKEN` (do NOT commit credentials)
+   - Load in current shell: `source ~/.bashrc`
 
 2. **Create Python MCP Wrapper**:
 
@@ -83,8 +84,8 @@ Use curl + shell to interact with Bitbucket API directly:
 #!/bin/bash
 # scripts/bitbucket-api.sh
 
-BITBUCKET_WORKSPACE="${BITBUCKET_WORKSPACE:-your-workspace}"
-BITBUCKET_API_TOKEN="${BITBUCKET_API_TOKEN}"
+BITBUCKET_WORKSPACE="${BITBUCKET_WORKSPACE:-hustles}"
+BITBUCKET_API_TOKEN="${BITBUCKET_SCOPED_TOKEN}"
 
 # List repositories
 bitbucket_list_repos() {

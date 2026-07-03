@@ -114,3 +114,40 @@
   - Critical Lucas Gallindo attribution completed and committed
   - Comprehensive audit documentation created for future remediation
   - All work pushed to origin/close-up-and-personal
+
+### 2026-07-03T08:30:00Z (MCP INTEGRATION, TESTING INFRASTRUCTURE, GITLAB RESEARCH)
+- **Commits**: b571422a3, d32406c4c
+- **Status**: Ready for push (pending GitHub secret scanning unblock)
+- **Work Completed**:
+  - ✅ Alternative 4 (Shell Test Harness): Implemented and verified working
+    - 6 comprehensive tests (connectivity, models, chat, code, streaming, perf)
+    - No Docker, no Python required (POSIX shell + curl)
+    - Location: scripts/test-local-editor.sh
+  - ✅ MCP_GITHUB_SETUP.md: Updated with local build (no Docker), VS Code integration
+  - ✅ MCP_BITBUCKET_SETUP.md: Migrated to Scoped API Tokens (app passwords deprecated July 28)
+  - ✅ MCP_SERVERS_STATUS.md: Active servers documented + GitLab MCP research roadmap
+  - ✅ AGENTS_DETERMINISM_ANALYSIS.md: Refined rules (010: lazy SDD, 011: fast-path classification, 015: command aliases)
+  - ✅ Session KV integration: Auto-increment message_counter, auto-include context
+  - ✅ 9 comprehensive docs created; no Docker dependencies
+
+- **MCP Servers Active**:
+  - llama-server (PID 5461) on 127.0.0.1:38080 — Operational 48+ hours
+  - playwright-mcp (PID 19478) — Web automation ready
+  - github-mcp-server — Built at /home/lugatj/code/foss/github-mcp-server (ready to run)
+
+- **GitLab MCP (Priority 0)**:
+  - Research complete: No official GitLab MCP server exists
+  - Proposed: Custom Python wrapper using GitLab REST API
+  - Blocker: Requires network access verification + API token (user to provide)
+  - Target: https://gitlab.cloud.tjpe.jus.br/groups/sistemas/tjpeia/-/milestones/5
+
+- **Push Status**: PENDING
+  - GitHub secret scanning detected test PAT in docs (non-blocking; can unblock via GitHub UI)
+  - Local commits ready; branch ahead of bitbucket/close-up-and-personal
+  - All work staged and committed
+
+- **Next Immediate Actions**:
+  1. Unblock GitHub push (follow GH013 link) OR provide regenerated example token
+  2. Implement Alternative 1 (API wrapper for Aider) by next session
+  3. Kickstart GitLab MCP wrapper implementation (if network access confirmed)
+  4. Begin timestamp RFC3339 tool TDD implementation

@@ -103,21 +103,24 @@ go build -o github-mcp-server cmd/github-mcp-server/main.go
 
 **Approach**: Build lightweight MCP server using Python MCP SDK + GitLab API
 
+**Setup**: Token is stored in `~/.bashrc` as `$GITLAB_PAT` (do NOT commit credentials)
+
 **Implementation Sketch**:
 ```python
 # tools/gitlab_mcp.py
 from mcp.server.fastmcp import FastMCP
 import httpx
+import os
 
 mcp = FastMCP("gitlab")
 
 GITLAB_URL = "https://gitlab.cloud.tjpe.jus.br"
-GITLAB_TOKEN = os.getenv("GITLAB_PRIVATE_TOKEN")  # Personal access token
+GITLAB_TOKEN = os.getenv("GITLAB_PAT")  # Personal access token from ~/.bashrc
 
 @mcp.tool()
-async def list_milestones(project_id: int) -> dict:
-    """List milestones for project (e.g., group/sistemas/tjpeia milestone 5)."""
-    url = f"{GITLAB_URL}/api/v4/projects/{project_id}/milestones"
+async def list_milestones(group_slug: str = "sistemas/tjpeia") -> dict:
+    """List milestones for group (e.g., sistemas/tjpeia)."""
+    url = f"{GITLAB_URL}/api/v4/groups/{group_slug}/milestones"
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             url,
@@ -126,9 +129,9 @@ async def list_milestones(project_id: int) -> dict:
         return resp.json()
 
 @mcp.tool()
-async def list_milestone_issues(project_id: int, milestone_id: int) -> dict:
-    """List issues in a milestone."""
-    url = f"{GITLAB_URL}/api/v4/projects/{project_id}/milestones/{milestone_id}/issues"
+async def list_milestone_issues(group_slug: str, milestone_id: int) -> dict:
+    """List issues in a group milestone (e.g., milestone 5 in sistemas/tjpeia)."""
+    url = f"{GITLAB_URL}/api/v4/groups/{group_slug}/milestones/{milestone_id}/issues"
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             url,
@@ -154,6 +157,71 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+#### Option 3: Direct API Integration (Shell Wrapper)
+
+**Approach**: Use shell + curl to interact with GitLab API without Python MCP server overhead
+
+**Token**: Stored in `~/.bashrc` as `$GITLAB_PAT` (do NOT commit)
+
+**Implementation**:
+```bash
+#!/bin/bash
+# scripts/gitlab-api.sh
+
+GITLAB_URL="https://gitlab.cloud.tjpe.jus.br"
+GITLAB_TOKEN="${GITLAB_PAT}"
+
+# List milestones in a group
+gitlab_list_milestones() {
+    local group_slug="${1:-sistemas/tjpeia}"
+    curl -s -X GET \
+        "${GITLAB_URL}/api/v4/groups/${group_slug}/milestones" \
+        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        -H "Content-Type: application/json"
+}
+
+# List issues in a milestone
+gitlab_list_milestone_issues() {
+    local group_slug="${1:-sistemas/tjpeia}"
+    local milestone_id="${2:-5}"
+    curl -s -X GET \
+        "${GITLAB_URL}/api/v4/groups/${group_slug}/milestones/${milestone_id}/issues" \
+        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        -H "Content-Type: application/json"
+}
+
+# Update issue
+gitlab_update_issue() {
+    local project_id="$1"
+    local issue_iid="$2"
+    local updates="$3"
+    
+    curl -s -X PUT \
+        "${GITLAB_URL}/api/v4/projects/${project_id}/issues/${issue_iid}" \
+        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "${updates}"
+}
+
+# Examples
+# gitlab_list_milestones "sistemas/tjpeia"
+# gitlab_list_milestone_issues "sistemas/tjpeia" "5"
+# gitlab_update_issue "123" "45" '{"state":"closed","description":"Done"}'
+```
+
+**Usage**:
+```bash
+source ~/.bashrc  # Load $GITLAB_PAT
+source scripts/gitlab-api.sh
+gitlab_list_milestone_issues "sistemas/tjpeia" "5" | jq '.[] | {id, title, state}'
+```
+
+**Advantages**:
+- ✅ No Python runtime required
+- ✅ No MCP server overhead
+- ✅ Direct integration with shell workflows
+- ✅ Can be combined with jq for JSON processing
 
 **Estimated Effort**: 4-6 hours (Python + GitLab API mapping)
 

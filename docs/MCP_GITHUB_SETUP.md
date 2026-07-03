@@ -113,13 +113,13 @@ code .
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PAT}"
       }
     }
-  }<YOUR_GITHUB_PAT>
+  }
 }
 ```
 
 Then in shell:
 ```bash
-export GITHUB_PAT="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"
+export GITHUB_PAT="<YOUR_GITHUB_PAT>"
 code .  # VS Code inherits env var
 ```
 

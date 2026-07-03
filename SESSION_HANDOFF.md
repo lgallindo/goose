@@ -188,3 +188,26 @@
 
 - **Next Phase**: Design review → Security review → UX review → RFC → Implementation (TDD)
 
+
+### 2026-07-03T16:00:00Z - Phase 1 MCP Shell Wrappers Complete
+- **Action:** Implemented shell-based API wrappers for all 3 MCP providers (GitHub, GitLab, Bitbucket)
+- **Goal:** Deploy MCP infrastructure without Docker/Python/Go toolchain dependencies
+- **Decision:** Use POSIX shell + curl for direct API calls (simpler, faster, lower overhead than MCP protocol)
+- **Artifacts:**
+  - `scripts/github-api.sh` (450+ lines): 12 functions for repos, issues, PRs, workflows, releases
+  - `scripts/gitlab-api.sh` (350+ lines): 10 functions for milestones, issues, projects, MRs
+  - `scripts/bitbucket-api.sh` (300+ lines): 11 functions for workspaces, repos, issues, PRs
+- **Auth Strategy:** Environment variables (GITHUB_TOKEN, GITLAB_PAT, BITBUCKET_SCOPED_TOKEN) from ~/.bashrc
+- **Testing Results:**
+  - GitHub: ✅ CLI auth verified (gh CLI authenticated as lgallindo)
+  - GitLab: ⚠️ Token expired/insufficient scope (401 Unauthorized)
+  - Bitbucket: ⚠️ Token expired/insufficient scope ("invalid, expired, or not supported")
+- **Next Steps:** 
+  1. Regenerate GitLab PAT + Bitbucket token
+  2. Verify wrapper connectivity with fresh tokens
+  3. Create agent prompts for GitLab + Bitbucket (GitHub prompt already exists)
+  4. Consider Phase 1 Deployment complete after verification
+- **Timeline:** Token regeneration required before production; testing resumable immediately upon token refresh
+- **Commits:** dc11e85d6 (GitLab+Bitbucket), 5fc96584f (GitHub), 14599e277 (Roadmap update)
+- **Branch:** close-up-and-personal
+- **Evidence:** https://github.com/lgallindo/goose/commit/14599e277 (public fork, safe to share)

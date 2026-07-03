@@ -229,7 +229,57 @@ stored_record = {
 }
 ```
 
-### 3.3 Key Rotation Strategy
+### 3.3 Post-Quantum Cryptography (PQC) Considerations
+
+**Current Approach**: AES-256-GCM (classical, resistant to Grover's algorithm with ~128-bit security margin)
+
+**PQC Assessment**:
+
+| Dimension | Current (AES-256-GCM) | PQC (Lattice/ML-KEM) | Decision |
+|-----------|----------------------|----------------------|----------|
+| **Speed** | Sub-millisecond (HW accel) | ~0.1-1ms (slower) | Current fine for MVP |
+| **Maturity** | NIST standard (TLS 1.3) | NIST standardizing (Aug 2024) | Use current now |
+| **Implementation** | ring crate (audited) | liboqs (active dev) | Risk: liboqs immaturity |
+| **Post-quantum risk** | Vulnerable to large quantum computers | Resistant (lattice problem) | Consider for Phase 3 |
+| **Key size** | 32 bytes (256-bit) | ~1,184 bytes (ML-KEM-1024) | Current much smaller |
+| **Adoption** | Universal | Not yet mainstream | Current pragmatic |
+
+**Recommendation** (Phased Approach):
+
+**MVP (Now)**: AES-256-GCM
+- ✅ Fast, proven, hardware-accelerated
+- ✅ Adequate for 10-15 year horizon (until quantum threat realistic)
+- ✅ Minimal dependency complexity
+
+**Phase 3 (2026-Q4)**: Add PQC Support
+```rust
+pub enum EncryptionMode {
+    AES256GCM,           // Current
+    MLKEM1024,           // Post-quantum (liboqs)
+    Hybrid {             // Both (best security)
+        classical: AES256GCM,
+        postquantum: MLKEM1024,
+    },
+}
+```
+
+**Hybrid Approach** (Future):
+- Encrypt with both AES-256-GCM AND ML-KEM-1024
+- Attacker needs to break BOTH to access secrets
+- Protects against both classical and quantum threats
+- Ciphertext size increases (~1.2KB per secret)
+
+**Relevant Crates**:
+- `liboqs-rs` (Rust bindings to liboqs)
+- `ml-kem` (Pure Rust, still experimental)
+- `hybrid-crypto` (custom hybrid wrapper)
+
+**Decision**:
+- ✅ **MVP**: Stick with AES-256-GCM (current recommendation)
+- 📋 **Phase 3**: RFC for PQC hybrid mode (if quantum threat accelerates)
+- 🔍 **Monitor**: NIST standardization timeline + liboqs maturity
+
+### 3.4 Key Rotation Strategy
 
 **When to Rotate Master Key**:
 - User requests manual rotation
@@ -268,7 +318,75 @@ $SECRET_NAME$             // Missing % delimiters
 %$secret_name$%           // Case-sensitive (MUST be uppercase)
 ```
 
-### 4.2 Substitution Phases
+### 4.2 Secret Type Validation & Detection
+
+**At Initial Setup** (`/secret add`), validate secret type based on value patterns:
+
+| Type | Pattern | Example | Validation |
+|------|---------|---------|-----------|
+| **GitHub PAT** | `^ghp_[A-Za-z0-9_]{36}$` | `ghp_abc123...` | Length ≥ 36, alphanumeric + underscore |
+| **GitLab Token** | `^(glft\|glpat)-[A-Za-z0-9_-]{20,}$` | `glft-U1a8JH61...` | Starts with `glft-` or `glpat-`, length ≥ 20 |
+| **Bitbucket Token** | `^ATATT3x[A-Za-z0-9_-]{50,}$` | `ATATT3xFfGF0q...` | Starts with `ATATT3x`, length ≥ 50 |
+| **OpenAI Key** | `^sk-[A-Za-z0-9_-]{48,}$` | `sk-proj-...` | Starts with `sk-`, length ≥ 48 |
+| **Generic API Key** | `^[A-Za-z0-9_-]{20,}$` | Custom | Length 20-200, alphanumeric pattern |
+| **SSH Private Key** | `^-----BEGIN.*PRIVATE KEY` | `-----BEGIN RSA PRIVATE KEY` | Detect PEM header |
+| **Webhook Secret** | Variable (base64-like) | `1234abc...` | Entropy check: ≥ 128 bits |
+
+**Validation Logic**:
+```rust
+pub enum SecretType {
+    GitHubPAT,
+    GitLabToken,
+    BitbucketToken,
+    OpenAIKey,
+    SSHPrivateKey,
+    WebhookSecret,
+    Generic,
+}
+
+impl SecretType {
+    pub fn detect(value: &str) -> Option<SecretType> {
+        if value.starts_with("ghp_") && value.len() >= 36 {
+            return Some(SecretType::GitHubPAT);
+        }
+        if value.starts_with("glft-") || value.starts_with("glpat-") {
+            return Some(SecretType::GitLabToken);
+        }
+        if value.starts_with("ATATT3x") && value.len() >= 50 {
+            return Some(SecretType::BitbucketToken);
+        }
+        if value.starts_with("sk-") && value.len() >= 48 {
+            return Some(SecretType::OpenAIKey);
+        }
+        if value.starts_with("-----BEGIN") && value.contains("PRIVATE KEY") {
+            return Some(SecretType::SSHPrivateKey);
+        }
+        // Entropy check for webhook secrets (≥128 bits)
+        if entropy_bits(value) >= 128 {
+            return Some(SecretType::WebhookSecret);
+        }
+        Some(SecretType::Generic)
+    }
+}
+```
+
+**Benefits**:
+- ✅ User guidance: "Detected GitHub PAT (recommended scopes: repo, gist, user)"
+- ✅ Type-specific handling: SSH keys get special treatment (full file support)
+- ✅ Audit trail: Logs show secret type (not value)
+- ✅ Security warnings: Alert for overly-permissive scopes (future Phase 2)
+
+**User Experience**:
+```
+User: /secret add GITHUB_TOKEN ghp_abc123...
+Agent: ✅ Secret 'GITHUB_TOKEN' detected as GitHub PAT
+         - Type: GitHub Personal Access Token
+         - Scope validation: Recommend repo, gist, user scopes
+         - Rotation recommended: Every 90 days
+         - Stored: Encrypted with AES-256-GCM
+```
+
+### 4.3 Substitution Phases
 
 #### Phase 1: Detection (Agent Reasoning)
 - Scan user messages for `%$NAME$%` patterns

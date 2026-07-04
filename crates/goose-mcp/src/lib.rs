@@ -19,11 +19,13 @@ mod memory;
 pub mod peekaboo;
 pub mod subprocess;
 pub mod tutorial;
+pub mod websearch;
 
 pub use autovisualiser::AutoVisualiserRouter;
 pub use computercontroller::ComputerControllerServer;
 pub use memory::MemoryServer;
 pub use tutorial::TutorialServer;
+pub use websearch::WebsearchServer;
 
 /// Type definition for a function that spawns and serves a builtin extension server
 pub type SpawnServerFn = fn(tokio::io::DuplexStream, tokio::io::DuplexStream);
@@ -60,5 +62,6 @@ pub static BUILTIN_EXTENSIONS: Lazy<HashMap<&'static str, SpawnServerFn>> = Lazy
         builtin!(computercontroller, ComputerControllerServer),
         builtin!(memory, MemoryServer),
         builtin!(tutorial, TutorialServer),
+        builtin!(websearch, WebsearchServer),
     ])
 });

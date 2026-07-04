@@ -51,3 +51,5 @@ pub mod tool_inspection;
 pub mod tool_monitor;
 pub mod tracing;
 pub mod utils;
+pub mod secrets_kv;
+pub mod rust_llm;

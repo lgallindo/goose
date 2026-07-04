@@ -54,30 +54,33 @@ gitlab_api_call() {
 # Tool: List milestones in a group
 gitlab_list_milestones() {
     local group_slug="${1:-sistemas/tjpeia}"
+    local encoded_slug=$(echo -n "$group_slug" | jq -sRr @uri)
     
     log_info "Fetching milestones for group: $group_slug"
     
-    gitlab_api_call GET "/groups/${group_slug}/milestones" | jq -r '.[] | "\(.id): \(.title) (\(.state))"'
+    gitlab_api_call GET "/groups/${encoded_slug}/milestones" | jq -r '.[] | "\(.id): \(.title) (\(.state))"'
 }
 
 # Tool: List issues in a group milestone
 gitlab_list_milestone_issues() {
     local group_slug="${1:-sistemas/tjpeia}"
-    local milestone_id="${2:-5}"
+    local milestone_id="${2:-13}"
+    local encoded_slug=$(echo -n "$group_slug" | jq -sRr @uri)
     
     log_info "Fetching issues for milestone $milestone_id in group: $group_slug"
     
-    gitlab_api_call GET "/groups/${group_slug}/milestones/${milestone_id}/issues" | jq -r '.[] | "\(.iid): \(.title) (\(.state))"'
+    gitlab_api_call GET "/groups/${encoded_slug}/milestones/${milestone_id}/issues" | jq -r '.[] | "\(.iid): \(.title) (\(.state))"'
 }
 
 # Tool: Get full details of a milestone
 gitlab_get_milestone() {
     local group_slug="${1:-sistemas/tjpeia}"
-    local milestone_id="${2:-5}"
+    local milestone_id="${2:-13}"
+    local encoded_slug=$(echo -n "$group_slug" | jq -sRr @uri)
     
     log_info "Fetching milestone details: $milestone_id in $group_slug"
     
-    gitlab_api_call GET "/groups/${group_slug}/milestones/${milestone_id}"
+    gitlab_api_call GET "/groups/${encoded_slug}/milestones/${milestone_id}"
 }
 
 # Tool: Get issue details
@@ -143,16 +146,18 @@ gitlab_create_issue() {
 # Tool: List projects
 gitlab_list_projects() {
     local group_slug="${1:-sistemas}"
+    local encoded_slug=$(echo -n "$group_slug" | jq -sRr @uri)
     
     log_info "Fetching projects in group: $group_slug"
     
-    gitlab_api_call GET "/groups/${group_slug}/projects" | jq -r '.[] | "\(.id): \(.name_with_namespace)"'
+    gitlab_api_call GET "/groups/${encoded_slug}/projects" | jq -r '.[] | "\(.id): \(.name_with_namespace)"'
 }
 
 # Tool: Search issues across group
 gitlab_search_issues() {
     local group_slug="${1:-sistemas/tjpeia}"
     local query="${2:-}"
+    local encoded_slug=$(echo -n "$group_slug" | jq -sRr @uri)
     
     if [[ -z "$query" ]]; then
         log_error "Usage: gitlab_search_issues <group_slug> <query>"
@@ -162,7 +167,7 @@ gitlab_search_issues() {
     
     log_info "Searching issues in group $group_slug with query: $query"
     
-    gitlab_api_call GET "/groups/${group_slug}/issues?search=${query}" | jq -r '.[] | "\(.iid): \(.title) (\(.state))"'
+    gitlab_api_call GET "/groups/${encoded_slug}/issues?search=${query}" | jq -r '.[] | "\(.iid): \(.title) (\(.state))"'
 }
 
 # Tool: List merge requests

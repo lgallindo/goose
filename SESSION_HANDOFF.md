@@ -460,3 +460,12 @@
 
 **Commit:** 98f8c7b6c (feat: implement Alternative 1 - Aider local bridge wrapper)
 **Next:** Integration with test-local-editor.sh + performance validation
+
+### 2026-07-04T14:15:00Z - Embedded Web Search Research
+- **Requirement**: Embedded native Rust web search library for Goose (no MCP server, no external API keys).
+- **FOSS & Licensing**: All viable Rust ecosystem options are FOSS, mostly MIT/Apache-2.0 (fully GPL-compatible).
+- **SearXNG**: Disqualified. `searxng-client` is an API wrapper only; it does not embed the Python/Flask SearXNG engine.
+- **Embedded Candidates**:
+  - `websearch` (MIT) - Multi-provider (DDG, etc).
+  - `duckduckgo-search-cli` / `duckduckgo_search` (MIT/Apache 2.0). 
+- **Next steps**: Implement embedded search directly inside `goose` crates using one of the MIT DDG scraper crates, or build our own minimalistic `reqwest`-based HTML/Lite scraper.

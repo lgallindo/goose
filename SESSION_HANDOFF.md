@@ -469,3 +469,16 @@
   - `websearch` (MIT) - Multi-provider (DDG, etc).
   - `duckduckgo-search-cli` / `duckduckgo_search` (MIT/Apache 2.0). 
 - **Next steps**: Implement embedded search directly inside `goose` crates using one of the MIT DDG scraper crates, or build our own minimalistic `reqwest`-based HTML/Lite scraper.
+
+### 2026-07-04T15:00:00Z - TDD Embedded Web Search, Secrets KV, and Rust LLM Tasks Started
+- **Bitbucket Token Status**: API calls confirmed `401 Unauthorized` with `lgallindo:ATATT3xF...` due to strict Atlassian PAT vs App Password rules. Token was an Account PAT instead of Workspace App Password. User must recreate as App Password via Bitbucket UI when ready.
+- **Embedded Web Search Tools (Task)**:
+  - Validated pure native embedded Rust Web Search.
+  - Implemented TDD server routing inside `crates/goose-mcp/src/websearch/mod.rs` exposing `search_websearch_crate`, `search_duckduckgo_cli_crate`, `search_searxng_client_crate`, and `uber_search` tools. 
+  - `uber_search` performs a concurrent UI using `futures::join!` over all three returning a massive union table.
+  - SearXNG error resilient fallback incorporated. SearXNG natively connects to `http://localhost:8080`.
+  - Compile errors were fixed. Wait: `cargo check` verified clean parsing.
+- **Secrets KV Store (Task 3)**:
+  - Created base structural logic `crates/goose/src/secrets_kv.rs` using a TDD configuration stub with passing tests (`test_secret_save_and_retrieve`).
+- **Rust LLM Integration (Task 4)**: 
+  - Created structural logic in `crates/goose/src/rust_llm.rs` enabling `RustLlmProvider` TDD mock implementation.

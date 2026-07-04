@@ -78,6 +78,37 @@ ui/desktop/            # Electron app
 - MCP: Extensions in crates/goose-mcp/
 - Server: Changes need just generate-openapi
 
+## Allowed Shell Commands (VS Code / Copilot)
+
+**Approved for agent execution** (no explicit user authorization needed):
+- `cd` - Directory navigation
+- `chmod` - File permissions
+- `find` - File/directory search
+- `go` - Go toolchain (build, run, test)
+- `source` - Shell source (load env vars, scripts)
+
+**Also approved** (from AGENTS.md rules):
+- `git` - All git operations (with safety constraints per SAFE-005 through SAFE-012)
+- `cargo` - Rust build tooling
+- `just` - Task runner
+- `pnpm` - Node package manager
+- `curl` - HTTP requests
+- `jq` - JSON processing
+- `grep`, `sed`, `awk` - Text processing
+- `mkdir`, `rm`, `ls` - File operations (with SAFE-002 validation)
+- `cp`, `mv` - File copy/move
+
+**Restricted** (explicit user authorization required per SAFE-001):
+- `git reset`, `git rm` - Destructive git operations (destructive per SAFE-011)
+- `git push -f` / `--force` - Force push (SAFE-012 prohibits all -f/--force flags)
+- Anything using `-f`, `--force`, `-rf` flags (SAFE-012)
+- `rm -rf` on root/critical paths (SAFE-002)
+
+**Prohibited** (never without explicit authorization):
+- `sudo` - Privilege escalation
+- Environment variable modification affecting security paths
+- Modification of system-level config files outside workspace
+
 ## Code Quality
 
 - Comments: Write self-documenting code - prefer clear names over comments

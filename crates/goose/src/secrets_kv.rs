@@ -1,5 +1,9 @@
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+
+#[derive(Clone)]
 pub struct SecretsKvStore {
-    // TDD stub
+    store: Arc<RwLock<HashMap<String, String>>>,
 }
 
 impl Default for SecretsKvStore {
@@ -10,15 +14,20 @@ impl Default for SecretsKvStore {
 
 impl SecretsKvStore {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            store: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
     
-    pub fn save_secret(&self, _key: &str, _value: &str) -> Result<(), &'static str> {
+    pub fn save_secret(&self, key: &str, value: &str) -> Result<(), &'static str> {
+        let mut map = self.store.write().map_err(|_| "Failed to lock store for writing")?;
+        map.insert(key.to_string(), value.to_string());
         Ok(())
     }
     
-    pub fn get_secret(&self, _key: &str) -> Option<String> {
-        Some("dummy_secret".to_string())
+    pub fn get_secret(&self, key: &str) -> Option<String> {
+        let map = self.store.read().ok()?;
+        map.get(key).cloned()
     }
 }
 
@@ -29,9 +38,13 @@ mod tests {
     #[test]
     fn test_secret_save_and_retrieve() {
         let store = SecretsKvStore::new();
+        // Save
         assert!(store.save_secret("TEST_KEY", "super_secret_value").is_ok());
-        let val = store.get_secret("TEST_KEY").unwrap();
-        // Since we are mocking TDD, this test will ensure the API handles basic setup
-        assert!(!val.is_empty());
+        // Retrieve
+        let val = store.get_secret("TEST_KEY").expect("Secret should exist");
+        assert_eq!(val, "super_secret_value");
+        
+        // Missing key
+        assert!(store.get_secret("MISSING_KEY").is_none());
     }
 }

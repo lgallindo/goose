@@ -499,4 +499,15 @@
   - Published healthy=true at 2026-07-10T03:54:58Z
 - **Docs**: `docs/AGENT_SYNC_BUS_20260710T034700Z.md`
 - **Merge policy**: User inspects before merge; conflicts via meld (agent does not merge)
-- **Next**: Commit worktree changes; optional `GOOSE_TOOLSHIM=true` retest for test-goose Test 3
+### 2026-07-10T15:00:00Z - Post-Outage Recovery Batch (smoke + harness + RFCs)
+- **Smoke**: `bin/goose-local` SMOKE_OK; `test-local-editor.sh` 6/6; `just test-goose` 4/4 PASS (toolshim default true)
+- **Agent-sync**: `runtime_status.json` healthy on 38080
+- **Handoff fix**: superseded profiles.yaml / `session start --profile` with `bin/goose-local`
+- **Harness**: `GOOSE_TOOLSHIM` default `${GOOSE_TOOLSHIM:-true}` in goose_test_harness.sh
+- **Aider**: cloned `tools/aider` (lgallindo fork); `uv add --editable` in progress
+- **Goose worktree** (`wt/post-outage-recovery-20260710`):
+  - Marker bootstrap: `marker_schema.json`, `scripts/marker.py`, `marker_registry.json`
+  - `crates/goose/src/utils/timestamp.rs` (RFC3339 TDD module)
+  - `docs/RFC_SECRETS_KV_MVP_20260710T150000Z.md`
+  - `docs/RFC_RUST_LLM_INTEGRATION_20260710T150000Z.md`
+- **Skipped**: GitLab/Bitbucket token refresh (operator)

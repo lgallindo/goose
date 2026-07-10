@@ -1,0 +1,27 @@
+Goose Fork (lgallindo/goose)
+============================
+
+This is a derivative work of goose (https://github.com/aaif-goose/goose).
+
+Upstream
+--------
+Copyright 2024 Block, Inc.
+Licensed under the Apache License, Version 2.0
+See LICENSE file.
+
+Fork Modifications
+------------------
+Copyright (c) 2026 Lucas Gallindo
+Licensed under AGPL-3.0-or-later for new and substantially modified files.
+See LICENSE-COPYLEFT.md.
+
+Mixed Files
+-----------
+Files modified from upstream (e.g. crates/goose/src/agents/platform_extensions/developer/mod.rs,
+crates/goose/src/prompts/*.md) contain Apache-2.0 upstream portions plus AGPL-3.0-or-later
+modifications. Both license texts apply to their respective portions.
+
+Third-Party
+-----------
+Rust and Node dependencies are listed in Cargo.lock and ui/pnpm-lock.yaml respectively.
+License compliance is checked via deny.toml (advisories) where configured.

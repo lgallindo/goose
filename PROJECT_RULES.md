@@ -35,8 +35,12 @@ cargo clippy --all-targets -- -D warnings
 ```bash
 just generate-openapi        # after server changes
 just run-ui                  # start desktop
-cd ui/desktop && pnpm test   # test UI
+cd ui/desktop && pnpm test   # test UI (prefer pnpm; bun only if lockfile supports)
+cd ui/text && pnpm test      # Ink TUI
 ```
+
+### Node tooling
+Prefer **pnpm** for `ui/` workspace packages. Use **bun** where a package ships `bun.lock`. Avoid `npm` unless no alternative exists.
 
 ## Structure
 ```
@@ -91,7 +95,8 @@ ui/desktop/            # Electron app
 - `git` - All git operations (with safety constraints per SAFE-005 through SAFE-012)
 - `cargo` - Rust build tooling
 - `just` - Task runner
-- `pnpm` - Node package manager
+- `pnpm` - Node package manager (preferred for goose UI monorepo)
+- `bun` - Node runtime/package manager (preferred when `bun.lock` present)
 - `curl` - HTTP requests
 - `jq` - JSON processing
 - `grep`, `sed`, `awk` - Text processing

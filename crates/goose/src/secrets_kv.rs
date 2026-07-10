@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2026 Lucas Gallindo
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 

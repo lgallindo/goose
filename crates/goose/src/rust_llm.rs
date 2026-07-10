@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2026 Lucas Gallindo
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RustLlmProvider {
     pub model_name: String,

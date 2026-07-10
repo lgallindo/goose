@@ -3,12 +3,12 @@ use super::base::{ConfigKey, ModelInfo, Provider, ProviderMetadata};
 use super::retry::ProviderRetry;
 use crate::api_client::{AuthMethod, TlsConfig};
 use crate::conversation::message::Message;
-use crate::conversation::token_usage::ProviderUsage;
+use crate::conversation::token_usage::{CostSource, ProviderUsage};
 use crate::declarative::{DeclarativeProviderConfig, KeyResolver};
 use crate::errors::ProviderError;
 use crate::formats::openai::is_openai_responses_model;
 use crate::formats::openai::{
-    create_request_with_options, get_usage, response_to_message, OpenAiFormatOptions,
+    create_request_with_options, get_cost, get_usage, response_to_message, OpenAiFormatOptions,
 };
 use crate::formats::openai_responses::{
     create_responses_request, get_responses_usage, responses_api_to_message, ResponsesApiResponse,
@@ -60,6 +60,11 @@ pub const OPEN_AI_KNOWN_MODELS: &[(&str, usize)] = &[
     ("gpt-5.4-mini", 400_000),
     ("gpt-5.4-nano", 400_000),
     ("gpt-5.4-pro", 1_050_000),
+    ("gpt-5.5", 1_050_000),
+    ("gpt-5.5-pro", 1_050_000),
+    ("gpt-5.6-luna", 1_050_000),
+    ("gpt-5.6-sol", 1_050_000),
+    ("gpt-5.6-terra", 1_050_000),
 ];
 
 pub const OPEN_AI_DOC_URL: &str = "https://platform.openai.com/docs/models";
@@ -641,7 +646,11 @@ impl Provider for OpenAiProvider {
 
                 let message = responses_api_to_message(&responses_api_response)?;
                 let usage_data = get_responses_usage(&responses_api_response);
-                let usage = ProviderUsage::new(model_config.model_name.clone(), usage_data);
+                let usage_json = json.get("usage").unwrap_or(&serde_json::Value::Null);
+                let mut usage = ProviderUsage::new(model_config.model_name.clone(), usage_data);
+                if let Some(cost) = get_cost(usage_json) {
+                    usage = usage.with_cost(cost, CostSource::ProviderReported);
+                }
 
                 log.write(
                     &serde_json::to_value(&message).unwrap_or_default(),
@@ -689,8 +698,12 @@ impl Provider for OpenAiProvider {
                     ProviderError::RequestFailed(format!("Failed to parse message: {}", e))
                 })?;
 
-                let usage_data = get_usage(json.get("usage").unwrap_or(&serde_json::Value::Null));
-                let usage = ProviderUsage::new(model_config.model_name.clone(), usage_data);
+                let usage_json = json.get("usage").unwrap_or(&serde_json::Value::Null);
+                let usage_data = get_usage(usage_json);
+                let mut usage = ProviderUsage::new(model_config.model_name.clone(), usage_data);
+                if let Some(cost) = get_cost(usage_json) {
+                    usage = usage.with_cost(cost, CostSource::ProviderReported);
+                }
 
                 log.write(
                     &serde_json::to_value(&message).unwrap_or_default(),
@@ -830,6 +843,26 @@ mod tests {
     use super::*;
     use crate::api_client::AuthMethod;
     use serde_json::json;
+
+    #[test]
+    fn gpt_5_5_and_5_6_models_have_expected_context_limits() {
+        for model in [
+            "gpt-5.5",
+            "gpt-5.5-pro",
+            "gpt-5.6-luna",
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+        ] {
+            assert_eq!(
+                OPEN_AI_KNOWN_MODELS
+                    .iter()
+                    .find(|(name, _)| *name == model)
+                    .map(|(_, limit)| *limit),
+                Some(1_050_000),
+                "unexpected context limit for {model}"
+            );
+        }
+    }
 
     fn make_provider(name: &str) -> OpenAiProvider {
         OpenAiProvider {

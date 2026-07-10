@@ -482,3 +482,21 @@
   - Created base structural logic `crates/goose/src/secrets_kv.rs` using a TDD configuration stub with passing tests (`test_secret_save_and_retrieve`).
 - **Rust LLM Integration (Task 4)**: 
   - Created structural logic in `crates/goose/src/rust_llm.rs` enabling `RustLlmProvider` TDD mock implementation.
+
+### 2026-07-10T03:55:00Z - Post-Outage Recovery: Goose ↔ llama-server VALIDATED
+- **Worktree**: `/home/lugatj/code/foss/worktrees/goose-20260710T023600Z-post-outage-recovery`
+- **Branch**: `wt/post-outage-recovery-20260710`
+- **Runtime**: secret_local_llm `just server` on `127.0.0.1:38080` — healthy (confirmed by other agent + curl)
+- **Goose → llama tests**:
+  - ✅ env-only: `goose run --no-profile` returned `HARNESS_PING` (~54s)
+  - ✅ `scripts/test-local-editor.sh` 6/6 PASS (after fixing `set -e` + `((var++))` bash bug)
+  - ⚠️ `secret_local_llm` `just test-goose`: Test 1 PASS; Test 3 FAIL (raw JSON block; `GOOSE_TOOLSHIM=false`)
+  - ⚠️ `goose session start --profile secret-local` — subcommand `start` does not exist in v1.40.0
+  - ⚠️ `profiles.yaml` `secret-local.host` is `http://127.0.0.1:38080` (missing `/v1`) — operator should fix manually
+- **Agent-sync bus**:
+  - Created `scripts/agent-bus-publish.sh`, `scripts/agent-bus-wait.sh`
+  - Bus dir: `/home/lugatj/code/.agent_sync/runtime_status.json`
+  - Published healthy=true at 2026-07-10T03:54:58Z
+- **Docs**: `docs/AGENT_SYNC_BUS_20260710T034700Z.md`
+- **Merge policy**: User inspects before merge; conflicts via meld (agent does not merge)
+- **Next**: Commit worktree changes; optional `GOOSE_TOOLSHIM=true` retest for test-goose Test 3

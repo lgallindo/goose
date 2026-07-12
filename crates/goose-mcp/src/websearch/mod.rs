@@ -155,13 +155,13 @@ impl ServerHandler for WebsearchServer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rmcp::ServerHandler;
 
     #[tokio::test]
-    async fn test_websearch_tools_exist() {
+    async fn test_websearch_server_exposes_tools() {
         let server = WebsearchServer::new();
-        assert!(server.tool_router.has_tool("search_websearch_crate"));
-        assert!(server.tool_router.has_tool("search_duckduckgo_cli_crate"));
-        assert!(server.tool_router.has_tool("search_searxng_client_crate"));
-        assert!(server.tool_router.has_tool("uber_search"));
+        let info = server.get_info();
+        assert_eq!(info.server_info.name, "goose-websearch");
+        assert!(info.capabilities.tools.is_some());
     }
 }

@@ -1,0 +1,13 @@
+[
+  {
+    "marker_id": "MKR-20260710T145731Z-0001",
+    "scope": "repo",
+    "target": "/home/lugatj/code/foss/goose",
+    "classification": "internal",
+    "marked_at": "2026-07-10T14:57:31+00:00",
+    "updated_at": "2026-07-10T14:57:31+00:00",
+    "performer_id": "goose-agent",
+    "rationale": "Personal fork close-up-and-personal; MCP and local LLM integration is internal until upstream review.",
+    "notes": "bootstrap 2026-07-10"
+  }
+]

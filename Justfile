@@ -159,6 +159,13 @@ run-docs:
     @echo "Running docs server..."
     cd documentation && yarn && yarn start
 
+# Private, git-excluded research archive workflow.
+research-archive *args:
+    @".codex-internal/research_archive/research_archive.sh" {{args}}
+
+research-archive-mcp transport="stdio":
+    @".codex-internal/research_archive/research_archive.sh" serve --transport "{{transport}}"
+
 # Run server
 run-server:
     @echo "Running server..."

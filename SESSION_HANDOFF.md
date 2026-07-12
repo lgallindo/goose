@@ -511,3 +511,139 @@
   - `docs/RFC_SECRETS_KV_MVP_20260710T150000Z.md`
   - `docs/RFC_RUST_LLM_INTEGRATION_20260710T150000Z.md`
 - **Skipped**: GitLab/Bitbucket token refresh (operator)
+
+### 2026-07-11T18:16:16Z - External Research Link Archive
+- **Action:** Analyzed repository Markdown entrypoints and added a dated external research-links section to `README.md`.
+- **Goal:** Preserve four supplied URLs for review on 2026-07-30.
+- **Local archive:** `documentation/static/files/research/continue-links-20260711/` with source HTML, response headers, hashes, and `ARCHIVE_MANIFEST_20260711T181035Z.md`.
+- **Public archive:** Verified HTTP 200 Arquivo.pt replay URLs for the three public Continue pages; the Gemini URL remains local-only because it redirects to an authenticated app shell.
+- **Reminder:** Appended a self-removing cron job for 2026-07-30 at 09:00 local time; it writes `REMINDER_20260730.log`.
+- **Recovery:** Remove the README section and dated archive directory if the research note should not remain; remove the cron line containing `goose-external-research-reminder-20260730` before 2026-07-30 if the reminder is no longer wanted.
+
+### 2026-07-11T19:31:20Z - Private Research Archive Workflow
+- **Privacy correction:** Removed the external-research section from the end-user `README.md` and moved the prior archive under `.codex-internal/`, excluded through `.git/info/exclude`.
+- **New inputs:** Archived four unique URLs from the five supplied inputs; the repeated Atlassian cleanup URL was deduplicated and its `#M2606` anchor was retained in the private index.
+- **Procedure:** `.codex-internal/research_archive/research_archive.py` provides the Typer CLI and FastMCP tools; `.codex-internal/research_archive/research_archive.sh` bootstraps the isolated runtime.
+- **Interfaces:** `Justfile` exposes `research-archive` and `research-archive-mcp`; the MCP server supports stdio and SSE transports, with HTTP also available.
+- **Evidence:** Atlassian pages and `kraflab/dsda-doom` have HTTP 200 local snapshots and verified Arquivo.pt replays. DoomWiki returned an AWS WAF challenge (HTTP 202), and its Arquivo.pt submission has no memento URL yet.
+- **Reminder:** Updated the self-removing 2026-07-30 cron entry to write inside `.codex-internal/research_archive/REMINDER_20260730.log`.
+- **Recovery:** Remove the cron marker `goose-external-research-reminder-20260730` if the review is canceled; private state can be removed from `.codex-internal/research_archive/` without touching tracked end-user documentation.
+
+### 2026-07-11T19:44:24Z - Private Research Batch: Finance, Education, Wikipedia, and Shared Links
+- **Priority result:** The supplied `share.google` link returned HTTP 200 and was archived locally; its redirect resolved to a Google Search AI Mode result and was not submitted to a public archive.
+- **Batch:** Twelve additional unique supplied links were archived locally. Nine public-safe pages received verified Arquivo.pt replays; the Tesouro Direto Educa+ page returned HTTP 403, and the Pirsig Wikipedia submission produced no capture stream.
+- **Privacy:** The ChatGPT share and Google shared-link records remain local-only; the sensitive-host gate now covers Gemini, Google shared links, and ChatGPT. No raw research URLs were added to end-user documentation.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260711T194328Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private URL/status records, snapshots, headers, and hashes.
+- **Procedure:** `.codex-internal/research_archive/research_archive.py` and `.codex-internal/research_archive/research_archive.sh` remain exposed through the `research-archive` and `research-archive-mcp` Justfile targets.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry already points to the private archive notes/index and requires no change.
+- **Recovery:** Remove the private batch directory/index entries and the cron marker `goose-external-research-reminder-20260730` only if the review is canceled; preserve tracked end-user documentation.
+
+### 2026-07-11T19:59:20Z - Private Research Batch and Durable User Handling Queue
+- **Batch:** Fifteen new inputs were processed as fourteen unique archive records after deduplicating the repeated Visual Studio Code blog URL. Ten public-safe records have verified Arquivo.pt replays; Gemini shares remain local-only.
+- **Exceptions:** YouTube local capture failed certificate verification although Arquivo.pt replayed it; the B3 courses host returned HTTP 404; Catchwisdom redirected to login. These limitations are recorded in the private note.
+- **Procedure:** Archive records now carry stable IDs and durable `pending`, `assigned`, or `handled` state. `pick` randomly claims one pending record with a non-expiring claim ID; `mark-handled` persists the user report and is idempotent.
+- **Interfaces:** Added CLI commands `pick`, `mark-handled`, and `handling-list`, plus MCP tools `pick_archived_link`, `mark_archived_link_handled`, and `list_archived_link_handling` through the existing Justfile entrypoints.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260711T195920Z.md` and `.codex-internal/research_archive/archive-index.json` contain private URLs, statuses, snapshots, hashes, and handling state. No raw URLs were added to end-user documentation.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry already reviews the private notes/index and covers this queue.
+- **Recovery:** Do not silently expire or reassign a long-running claim; inspect `handling-list --status assigned` and make an explicit handling decision. Remove the cron marker only if the review is canceled.
+
+### 2026-07-11T20:07:34Z - Private Research Batch: Learning, Credentials, and Quantum Links
+- **Batch:** Twenty-one inputs were processed as twenty unique archive records after deduplicating the repeated Catchwisdom quantum-safe security planning URL. Seventeen public-safe records have verified Arquivo.pt replays.
+- **Privacy:** The CV/profile path and Catchwisdom dashboard were saved locally but excluded from public submission by path-specific privacy gates. Public Catchwisdom course pages remain eligible for archival.
+- **Exceptions:** Udemy returned HTTP 403 and its public capture was not verified. The profile and dashboard URLs redirected to sign-in/login pages; those responses remain local-only.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260711T200734Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private URLs, statuses, snapshots, hashes, and pending handling records.
+- **Queue:** No new record was claimed. The existing random `pending`/`assigned`/`handled` workflow remains available through the Justfile and MCP interfaces.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep profile/dashboard records local-only; do not silently expire or reassign long-running user claims. Remove the cron marker only if the review is canceled.
+
+### 2026-07-12T02:44:00Z - Credential and Session URL Batch
+- **Batch:** Three authentication/session-bearing links were archived locally: AWS sign-in, ContentController LTI/SCORM dispatch, and AWS Skill Builder logout.
+- **Privacy:** All three were blocked from public archival. Added sensitive host suffixes for `contentcontroller.com` and `auth.skillbuilder.aws`; the existing `signin.aws` rule covered the AWS sign-in link.
+- **Secrets:** Full query strings remain only in the git-excluded archive index/snapshots and are not reproduced in handoff or end-user documentation. If still active, the supplied session/claim values should be invalidated or rotated.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T024400Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private records and response hashes.
+- **Queue:** No handling claim was made; all three records remain pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep authentication/session records local-only and remove the cron marker only if the review is canceled.
+
+### 2026-07-12T02:47:37Z - AWS re:Post Authentication URL
+- **Batch:** Archived one AWS re:Post account sign-in URL locally; the response was HTTP 200.
+- **Privacy:** The `/account/signin` path is now blocked from public archival. The URL was not added to end-user documentation.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T024737Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private snapshot and hash.
+- **Queue:** No handling claim was made; the record remains pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep the authentication path local-only and remove the cron marker only if the review is canceled.
+
+### 2026-07-12T02:50:03Z - Google Drive File Link
+- **Batch:** Archived one Google Drive file-view URL locally; the viewer response was HTTP 200.
+- **Privacy:** Added `drive.google.com` to the sensitive-host gate; public archival was skipped and no raw link was added to end-user documentation.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T025003Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private snapshot and hash.
+- **Queue:** No handling claim was made; the record remains pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep Drive file links local-only unless the user explicitly confirms public archival is appropriate; remove the cron marker only if canceled.
+
+### 2026-07-12T03:06:35Z - Retried AWS Sign-in URL
+- **Retry:** The earlier capture was interrupted before creating a process, index entry, or snapshot directory. The retry completed with HTTP 200 and a local HTML snapshot.
+- **Privacy:** Public archival was skipped by the existing `signin.aws` sensitive-host rule; the URL was not added to end-user documentation.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T030635Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private snapshot and hash.
+- **Queue:** No handling claim was made; the record remains pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep authentication URLs local-only and remove the cron marker only if the review is canceled.
+
+### 2026-07-12T03:11:12Z - Boson ATX Reference and Wayback Assessment
+- **Batch:** The duplicated Boson ATX 24-pin connector page was archived once after canonical deduplication; local HTTP 200 and verified Arquivo.pt replay.
+- **Assessment:** Authenticated Wayback submission would be medium-to-high complexity because of browser handoff/OAuth, session lifecycle, secure state handling, retries, and credential-free testing. The recommended design is user-authenticated browser handoff, not password/cookie automation.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T031112Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private archive record and design note.
+- **Queue:** No handling claim was made; the record remains pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep any future authenticated archive integration credential-free from the local index and remove the cron marker only if the review is canceled.
+
+### 2026-07-12T03:13:42Z - Boson ATX Multimeter Reference
+- **Batch:** Archived the Boson ATX power-supply multimeter page locally with HTTP 200 and a verified Arquivo.pt replay.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T031342Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private archive record and hash.
+- **Queue:** No handling claim was made; the record remains pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep the record in the pending queue unless explicitly handled; remove the cron marker only if the review is canceled.
+
+### 2026-07-12T03:17:47Z - ATX Reference Batch and Wayback Fallback
+- **Batch:** Seven ATX references were archived. PinoutGuide and Wikipedia returned HTTP 200 with verified Arquivo.pt replays.
+- **Offline handling:** All five FormFactors URLs failed DNS resolution locally. Arquivo.pt returned HTTP 400/no memento, and the new automatic Wayback fallback returned HTTP 523 for each.
+- **Procedure:** The archive CLI/MCP now tries Wayback automatically for public-safe local status 0, HTTP errors, and bot challenges; `--no-wayback-on-offline` disables the fallback.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T031747Z.md` and `.codex-internal/research_archive/archive-index.json` contain local response records and provider outcomes.
+- **Queue:** No handling claim was made; all seven records remain pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Treat the FormFactors references as unavailable from both direct fetch and current archive checks; retry later if the source or archive services recover.
+
+### 2026-07-11T23:02:16Z - Private Research Batch and Private-Site List Sources
+- **Batch:** Five unique links were archived locally: the l’homme révolté page and repository, a Gemini share, a Shopee product page, and an AWS sign-in URL. The public page/repository and Shopee product have verified Arquivo.pt replays.
+- **Privacy:** The Gemini share and AWS `signin.aws` session URL were kept local-only. The privacy gate now blocks the `signin.aws` host suffix in addition to existing sensitive hosts and paths.
+- **List verification:** Verified IANA special-use/reserved-domain registries and RFC 6761 as sources for reserved/internal namespaces. Verified MDN’s warning that `robots.txt` is not a confidentiality boundary; a National Archives removal page was not used because direct verification returned HTTP 403.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260711T230216Z.md` and `.codex-internal/research_archive/archive-index.json` contain private URL/status records, archive links, and list-source findings.
+- **Queue:** No random handling claim was made; the new records remain pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Keep authentication/session URLs local-only and do not treat robots.txt or generic commercial domains as proof of privacy. Remove the cron marker only if the review is canceled.
+
+### 2026-07-12T03:36:47Z - Amazon Braket Skill Builder Batch
+- **Batch:** Archived two unique Amazon Braket Skill Builder links locally; both live fetches returned HTTP 200 and both received verified Arquivo.pt captures.
+- **Content caveat:** The downloaded HTML is the identical generic AWS Skill Builder SPA shell, so the snapshots preserve the transport response but not necessarily the client-rendered course/learning-plan content.
+- **Wayback:** Automatic offline fallback was enabled but not needed because neither response was offline, an HTTP error, or a bot challenge.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T033647Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private URLs, snapshot paths, hashes, archive links, and handling state.
+- **Queue:** No handling claim was made; both records remain pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** If rendered course content is needed, inspect the snapshots in a browser/client session or retry after the Skill Builder app changes; remove the cron marker only if the review is canceled.
+
+### 2026-07-12T04:10:25Z - Quantum and Power-Supply Reference Batch
+- **Batch:** Archived five unique technical references locally: Microsoft Learn Azure Quantum, RepairFAQ SMPS, a UFCG internship PDF, a Repeater Builder repair PDF, and an Intel power-supply design guide.
+- **Public results:** Microsoft Learn, RepairFAQ, and Repeater Builder have verified Arquivo.pt captures. The UFCG PDF failed local TLS validation, Arquivo.pt returned HTTP 404, and automatic Wayback fallback returned HTTP 523. The Intel PDF downloaded locally; Arquivo.pt returned HTTP 403 and was not verified.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T041025Z.md` and `.codex-internal/research_archive/archive-index.json` contain private URLs, snapshot paths, hashes, file metadata, provider outcomes, and handling state.
+- **Queue:** No handling claim was made; all five records remain pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Retry the UFCG source or public archives after certificate/archive availability changes; retain the Intel local PDF as the authoritative local copy and remove the cron marker only if the review is canceled.
+
+### 2026-07-12T04:19:47Z - Network World Quantum-Training Reference
+- **Batch:** Archived one Network World article locally; the fragment-bearing input canonicalized to the article URL and returned HTTP 200.
+- **Public result:** Arquivo.pt returned a verified HTTP 200 capture. Automatic Wayback fallback was enabled but not needed.
+- **Content:** The local response is a server-rendered article titled `12 quantum training courses from ISC2, IBM, AWS and more`; the original text fragment remains in the private record.
+- **Evidence:** `.codex-internal/research_archive/RESEARCH_NOTES_20260712T041947Z.md` and `.codex-internal/research_archive/archive-index.json` contain the private URL, snapshot, hash, archive link, and handling state.
+- **Queue:** No handling claim was made; the record remains pending.
+- **Reminder:** The existing self-removing 2026-07-30 09:00 local cron entry continues to review the private notes/index.
+- **Recovery:** Use the page-level canonical snapshot for later review; remove the cron marker only if the review is canceled.

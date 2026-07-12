@@ -44,4 +44,3 @@ process-wrap = { version = "9", default-features = false, features = ["std", "pr
 websearch = "0.1.1"
 searxng-client = "0.1.0"
 futures.workspace = true
-duckduckgo-search-cli = "0.8.8"

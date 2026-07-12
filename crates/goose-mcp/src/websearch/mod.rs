@@ -4,13 +4,18 @@
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{
-        CallToolResult, Content, ErrorData, Implementation, InitializeResult, ServerCapabilities, ServerInfo,
+        CallToolResult, Content, ErrorData, Implementation, InitializeResult, ServerCapabilities,
+        ServerInfo,
     },
     schemars::JsonSchema,
     service::RequestContext,
     tool, tool_handler, tool_router, RoleServer, ServerHandler,
 };
 use serde::{Deserialize, Serialize};
+use std::env;
+
+const DEFAULT_MAX_RESULTS: usize = 3;
+const SEARXNG_ENV: &str = "GOOSE_SEARXNG_URL";
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct SearchParams {
@@ -29,6 +34,55 @@ impl Default for WebsearchServer {
     }
 }
 
+fn searxng_base_url() -> Option<String> {
+    env::var(SEARXNG_ENV)
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+async fn search_duckduckgo_embedded(query: &str, max_results: usize) -> String {
+    let provider = websearch::providers::DuckDuckGoProvider::new();
+    let opts = websearch::SearchOptions {
+        query: query.to_string(),
+        provider: Box::new(provider),
+        ..Default::default()
+    };
+
+    let mut out = String::new();
+    if let Ok(results) = websearch::web_search(opts).await {
+        for (i, res) in results.iter().take(max_results).enumerate() {
+            out.push_str(&format!("{}. {} — {}\n", i + 1, res.title, res.url));
+        }
+    }
+    if out.is_empty() {
+        out.push_str("No DuckDuckGo results.\n");
+    }
+    out
+}
+
+async fn search_searxng_embedded(query: &str, max_results: usize) -> Option<String> {
+    let base = searxng_base_url()?;
+    let client = searxng_client::SearXNGClient::new(&base, searxng_client::ResponseFormat::Json);
+    match client.search(query).send_get_num(max_results).await {
+        Ok(res) => {
+            let mut out = String::new();
+            for (i, r) in res.iter().enumerate() {
+                let title = match r {
+                    searxng_client::response::SearchResult::MainResult(m) => m.title.clone(),
+                    searxng_client::response::SearchResult::LegacyResult(l) => l.title.clone(),
+                };
+                out.push_str(&format!("{}. {}\n", i + 1, title));
+            }
+            if out.is_empty() {
+                out.push_str("No SearXNG results.\n");
+            }
+            Some(out)
+        }
+        Err(e) => Some(format!("SearXNG error ({base}): {e}\n")),
+    }
+}
+
 #[tool_router(router = tool_router)]
 impl WebsearchServer {
     pub fn new() -> Self {
@@ -38,60 +92,40 @@ impl WebsearchServer {
     }
 
     #[tool(
-        name = "search_websearch_crate",
-        description = "Performs a web search using the websearch crate."
+        name = "search_web",
+        description = "Embedded web search (DuckDuckGo, no API key). Optional SearXNG when GOOSE_SEARXNG_URL is set."
     )]
-    pub async fn search_websearch(
+    pub async fn search_web(
         &self,
         params: Parameters<SearchParams>,
         _context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, ErrorData> {
         let query = params.0.query;
-        let mut results_str = String::new();
-        
-        let provider = websearch::providers::DuckDuckGoProvider::new();
-        let opts = websearch::SearchOptions { 
-            query: query.clone(), 
-            provider: Box::new(provider), 
-            ..Default::default() 
-        };
-        
-        if let Ok(results) = websearch::web_search(opts).await {
-            for res in results.iter().take(3) {
-                results_str.push_str(&format!("{}: {}\n", res.title, res.url));
-            }
+        let mut body = format!("Query: {query}\n\n## DuckDuckGo\n");
+        body.push_str(&search_duckduckgo_embedded(&query, DEFAULT_MAX_RESULTS).await);
+        if let Some(searxng) = search_searxng_embedded(&query, DEFAULT_MAX_RESULTS).await {
+            body.push_str("\n## SearXNG\n");
+            body.push_str(&searxng);
         }
-        if results_str.is_empty() { results_str = "No results".to_string() }
-        
-        Ok(CallToolResult::success(vec![Content::text(format!("Websearch Results:\n{}", results_str))]))
+        Ok(CallToolResult::success(vec![Content::text(body)]))
     }
 
+    /// Back-compat alias for older recipes/tests.
     #[tool(
-        name = "search_duckduckgo_cli_crate",
-        description = "Performs a DuckDuckGo search using duckduckgo-search-cli logic."
+        name = "search_websearch_crate",
+        description = "Alias for search_web (embedded DuckDuckGo via websearch crate)."
     )]
-    pub async fn search_duckduckgo(
+    pub async fn search_websearch_crate(
         &self,
         params: Parameters<SearchParams>,
-        _context: RequestContext<RoleServer>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, ErrorData> {
-        // TDD stub: use CLI fallback for speed of test
-        let query = params.0.query;
-        let out = std::process::Command::new("cargo")
-            .args(["run", "--bin", "duckduckgo-search-cli", "--", &query, "--max-results", "3", "--format", "json"])
-            .output();
-            
-        let res = match out {
-            Ok(output) if output.status.success() => String::from_utf8_lossy(&output.stdout).to_string(),
-            _ => format!("Fallback CLI failed for '{}'", query),
-        };
-        
-        Ok(CallToolResult::success(vec![Content::text(format!("DDG CLI Results:\n{}", res))]))
+        self.search_web(params, context).await
     }
 
     #[tool(
-        name = "search_searxng_client_crate",
-        description = "Performs a search using searxng-client crate against a local SearXNG instance."
+        name = "search_searxng",
+        description = "Search a local SearXNG instance (GOOSE_SEARXNG_URL, default http://localhost:8080)."
     )]
     pub async fn search_searxng(
         &self,
@@ -99,47 +133,39 @@ impl WebsearchServer {
         _context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, ErrorData> {
         let query = params.0.query;
-        let client = searxng_client::SearXNGClient::new("http://localhost:8080", searxng_client::ResponseFormat::Json);
-        
-        match client.search(&query).send_get_num(3).await {
+        let base = searxng_base_url().unwrap_or_else(|| "http://localhost:8080".to_string());
+        let client = searxng_client::SearXNGClient::new(&base, searxng_client::ResponseFormat::Json);
+        match client.search(&query).send_get_num(DEFAULT_MAX_RESULTS).await {
             Ok(res) => {
                 let mut out = String::new();
-                for r in res.iter() {
+                for (i, r) in res.iter().enumerate() {
                     let title = match r {
                         searxng_client::response::SearchResult::MainResult(m) => m.title.clone(),
                         searxng_client::response::SearchResult::LegacyResult(l) => l.title.clone(),
                     };
-                    out.push_str(&format!("* {}\n", title));
+                    out.push_str(&format!("{}. {}\n", i + 1, title));
+                }
+                if out.is_empty() {
+                    out.push_str("No results.\n");
                 }
                 Ok(CallToolResult::success(vec![Content::text(out)]))
-            },
-            Err(e) => {
-                Ok(CallToolResult::success(vec![Content::text(format!("SearXNG error: {}", e))]))
             }
+            Err(e) => Ok(CallToolResult::success(vec![Content::text(format!(
+                "SearXNG error ({base}): {e}"
+            ))])),
         }
     }
 
     #[tool(
         name = "uber_search",
-        description = "Performs a web search across websearch, duckduckgo-search-cli, and searxng-client. Returns a unified result."
+        description = "Search DuckDuckGo and optional SearXNG; returns unified markdown sections."
     )]
     pub async fn uber_search(
         &self,
         params: Parameters<SearchParams>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, ErrorData> {
-        let w = self.search_websearch(params.clone(), context.clone());
-        let d = self.search_duckduckgo(params.clone(), context.clone());
-        let s = self.search_searxng(params.clone(), context.clone());
-        
-        let (w_res, d_res, s_res) = futures::join!(w, d, s);
-        
-        let mut unified = String::from("=== UNION ALL RESULTS ===\n\n");
-        if let Ok(res) = w_res { unified.push_str(&format!("{:?}", res.content[0])); unified.push_str("\n\n"); }
-        if let Ok(res) = d_res { unified.push_str(&format!("{:?}", res.content[0])); unified.push_str("\n\n"); }
-        if let Ok(res) = s_res { unified.push_str(&format!("{:?}", res.content[0])); unified.push_str("\n\n"); }
-        
-        Ok(CallToolResult::success(vec![Content::text(unified)]))
+        self.search_web(params, context).await
     }
 }
 
@@ -151,7 +177,10 @@ impl ServerHandler for WebsearchServer {
                 "goose-websearch",
                 env!("CARGO_PKG_VERSION"),
             ))
-            .with_instructions("A server that provides web search utilities using multiple open-source crates.".to_string())
+            .with_instructions(
+                "Embedded web search (no API keys). Set GOOSE_SEARXNG_URL for optional SearXNG."
+                    .to_string(),
+            )
     }
 }
 
@@ -166,5 +195,22 @@ mod tests {
         let info = server.get_info();
         assert_eq!(info.server_info.name, "goose-websearch");
         assert!(info.capabilities.tools.is_some());
+    }
+
+    #[test]
+    fn test_searxng_env_empty_is_none() {
+        let _guard = env_lock();
+        env::remove_var(SEARXNG_ENV);
+        assert!(searxng_base_url().is_none());
+    }
+
+    fn env_lock() -> impl Drop {
+        use std::sync::{Mutex, MutexGuard};
+        static LOCK: Mutex<()> = Mutex::new(());
+        struct Guard(MutexGuard<'static, ()>);
+        impl Drop for Guard {
+            fn drop(&mut self) {}
+        }
+        Guard(LOCK.lock().unwrap())
     }
 }

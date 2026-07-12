@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lucas Gallindo
 # Publish local LLM runtime status for cross-repo agent coordination.
 # Writer: secret_local_llm agent (or operator after `just server`).
 # Reader: goose agent via scripts/agent-bus-wait.sh

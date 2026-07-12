@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lucas Gallindo
 # Test harness for local LLM editor integration
 # Purpose: Verify local Qwen model is accessible and functioning via OpenAI-compatible API
 # No dependencies: uses curl only (POSIX shell + curl, no Python/Docker)

@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lucas Gallindo
 # scripts/gitlab-api.sh
 # GitLab API wrapper for MCP integration
 # Direct API calls to GitLab via curl (no Python/MCP overhead)

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lucas Gallindo
 # Block until runtime_status.json reports healthy=true (or timeout).
 # Usage: scripts/agent-bus-wait.sh [timeout_seconds]
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lucas Gallindo
 # scripts/start-mcp-servers.sh
 # Deploy all MCP servers (GitHub, GitLab, Bitbucket)
 # Usage: source ~/.bashrc && ./scripts/start-mcp-servers.sh [github|gitlab|bitbucket|all]

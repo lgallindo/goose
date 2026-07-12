@@ -1,6 +1,8 @@
 use tokio_util::sync::CancellationToken;
 use unicode_normalization::UnicodeNormalization;
 
+pub mod timestamp;
+
 /// Encode bytes as a lowercase hexadecimal string.
 ///
 /// This avoids relying on digest output types implementing `LowerHex`, which
